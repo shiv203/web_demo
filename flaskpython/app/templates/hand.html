@@ -1,0 +1,218 @@
+{% extends "base.html" %}
+{% block title %}Pages{% endblock %}
+
+{% block body %}
+<div class="jumbotron">
+    <h1>Google Online Api</h1>
+</div>
+<!-- 
+{% if 'username' in session %}
+<div class="pull-right">
+    <a class="btn btn-primary" href="{{url_for('new_page')}}">Create A New Page</a>
+</div>
+{% endif %}
+
+<ul>
+    {% for page in pages %}
+        <li><a href="{{url_for('page', page_name=get_page_url_name(page))}}">{{get_page_display_name(page)}}</a></li>
+    {% endfor %}
+</ul>-->
+
+
+<html>
+
+    <script type="text/javascript" src="{{url_for('static',filename='js/handwriting.canvas.js')}}"></script>
+        <script type="text/javascript">
+            var out = "output"
+            var canvas, ctx, flag = false,
+                prevX = 0,
+                currX = 0,
+                prevY = 0,
+                currY = 0,
+                dot_flag = false;
+        
+            var x = "black",
+                y = 2;
+            
+            function init() {
+                
+                document.getElementById("myText").innerHTML = out;
+                canvas = new handwriting.Canvas(document.getElementById("can"));
+                canvas.setLineWidth(5);
+                //ctx = canvas.getContext("2d");
+                w = canvas.width;
+                h = canvas.height;
+
+                canvas.setCallBack(function(data, err) {
+                        if(err) throw err;
+                        else console.log(data);
+                        document.getElementById("myText").innerHTML=data;
+                    });
+
+                    canvas.setOptions(
+                    {
+                        language: "en",
+                        numOfReturn: 3
+                    }
+                );
+               /*
+                canvas.addEventListener("mousemove", function (e) {
+                    findxy('move', e)
+                }, false);
+                canvas.addEventListener("mousedown", function (e) {
+                    findxy('down', e)
+                }, false);
+                canvas.addEventListener("mouseup", function (e) {
+                    findxy('up', e)
+                }, false);
+                canvas.addEventListener("mouseout", function (e) {
+                    findxy('out', e)
+                }, false);*/
+            }
+            
+            function color(obj) {
+                switch (obj.id) {
+                    case "green":
+                        x = "green";
+                        break;
+                    case "blue":
+                        x = "blue";
+                        break;
+                    case "red":
+                        x = "red";
+                        break;
+                    case "yellow":
+                        x = "yellow";
+                        break;
+                    case "orange":
+                        x = "orange";
+                        break;
+                    case "black":
+                        x = "black";
+                        break;
+                    case "white":
+                        x = "white";
+                        break;
+                }
+                if (x == "white") y = 14;
+                else y = 20;
+            
+            }
+            
+            function draw() {
+                ctx.beginPath();
+                ctx.moveTo(prevX, prevY);
+                ctx.lineTo(currX, currY);
+                ctx.strokeStyle = x;
+                ctx.lineWidth = 8;
+                ctx.stroke();
+                ctx.closePath();
+            }
+            
+            function erase() {
+                canvas.erase();
+                //var m = confirm("Want to clear");
+                //if (m) {
+                    //ctx.clearRect(0, 0, w, h);
+                    //document.getElementById("canvasimg").style.display = "none";
+                //}
+            }
+
+            function download(){
+                var download = document.getElementById("download");
+                var image = document.getElementById("canvasimg").toDataURL("image/png")
+                            .replace("image/png", "image/octet-stream");
+                download.setAttribute("href", image);
+
+            }
+
+            function postFile(file) {
+                let formdata = new FormData();
+                formdata.append("image", file);
+                let xhr = new XMLHttpRequest();
+                xhr.open('POST', 'http://shiva-8700:5000/image', true);
+                xhr.onload = function () {
+                    if (this.status === 200){
+                        console.log(this.response);
+                        var result = JSON.parse(this.response);
+                        document.getElementById("myText").innerHTML=result.result;
+                    }
+                        
+                    else{
+                        console.error(xhr);
+                    }
+                };
+                
+                xhr.send(formdata);
+            }
+
+
+                    
+            function save() {
+
+                
+                var result = canvas.recognize();
+                
+                //document.getElementById("myText").innerHTML=result;
+                //var dataURL = canvas.toDataURL();
+                //console.log(dataURL);
+                //postFile(dataURL);
+                //document.getElementById("canvasimg").style.border = "2px solid";
+                //var dataURL = canvas.toDataURL();
+            
+                //document.getElementById("canvasimg").style.display = "inline";
+            }
+
+         
+            
+            function findxy(res, e) {
+                if (res == 'down') {
+                    prevX = currX;
+                    prevY = currY;
+                    currX = e.clientX - canvas.offsetLeft;
+                    currY = e.clientY - canvas.offsetTop;
+            
+                    flag = true;
+                    dot_flag = true;
+                    if (dot_flag) {
+                        ctx.beginPath();
+                        ctx.fillStyle = x;
+                        ctx.fillRect(currX, currY, 1, 1);
+                        ctx.closePath();
+                        dot_flag = false;
+                    }
+                }
+                if (res == 'up' || res == "out") {
+                    flag = false;
+                }
+                if (res == 'move') {
+                    if (flag) {
+                        prevX = currX;
+                        prevY = currY;
+                        currX = e.clientX - canvas.offsetLeft;
+                        currY = e.clientY - canvas.offsetTop;
+                        draw();
+                    }
+                }
+            }
+            </script>
+            <body onload="init()">
+                <h1> "output:"<span id="myText"></span></h1>
+                <canvas id="can" width="700" height="400" style="position:absolute;top:40%;left:20%;border:2px solid;"></canvas>
+               <!--  <div style="position:absolute;top:12%;left:43%;">Choose Color</div>
+                <div style="position:absolute;top:15%;left:45%;width:20px;height:20px;background:green;" id="green" onclick="color(this)"></div>
+                <div style="position:absolute;top:15%;left:47%;width:20px;height:20px;background:blue;" id="blue" onclick="color(this)"></div>
+                <div style="position:absolute;top:15%;left:49%;width:20px;height:20px;background:red;" id="red" onclick="color(this)"></div>
+                <div style="position:absolute;top:18%;left:45%;width:20px;height:20px;background:yellow;" id="yellow" onclick="color(this)"></div>
+                <div style="position:absolute;top:18%;left:47%;width:20px;height:20px;background:orange;" id="orange" onclick="color(this)"></div>
+                <div style="position:absolute;top:18%;left:49%;width:20px;height:20px;background:black;" id="black" onclick="color(this)"></div> 
+                <div style="position:absolute;top:20%;left:43%;">Eraser</div>
+                <div style="position:absolute;top:23%;left:45%;width:25px;height:25px;background:white;border:2px solid;" id="white" onclick="color(this)"></div>-->
+                <img id="canvasimg" style="position:absolute;top:10%;left:52%;" style="display:none;">
+                <input type="button" value="recognize" id="btn" size="40" onclick="save()" style="position:absolute;top:92%;left:20%;">
+                <input type="button" value="clear" id="clr" size="40" onclick="erase()" style="position:absolute;top:92%;left:25%;">
+                
+            </body>
+</html>
+
+{% endblock %}

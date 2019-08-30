@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+<script type="text/javascript"
+	src="{{url_for('static',filename='js/handwriting.canvas.js')}}"></script>
+
+<link rel="stylesheet"
+	href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="X-UA-Compatible" content="ie=edge">
+<title>{% block title %}Zoho Vision Handwriting{% endblock %}</title>
+<style>
+.sidebar h4 {
+	font-size: 20px;
+	line-height: 30px;
+	text-align: center;
+	color: cadetblue;
+}
+
+.sidebar h5 {
+	font-size: 18px;
+	line-height: 30px;
+	text-align: left;
+	color: cadetblue;
+}
+
+.result {
+	font-size: 18px;
+	line-height: 30px;
+	text-align: left;
+	color: violet;
+}
+
+#temp {
+	margin: 100px 0;
+}
+</style>
+</head>
+<script type="text/javascript">
+
+    window.onload = function(){
+        
+    };
+
+	var out = "output"
+	var canvas, ctx, flag = false, prevX = 0, currX = 0, prevY = 0, currY = 0, dot_flag = false;
+
+	var x = "black", y = 2;
+
+	function init() {
+        var parentDiv = document.getElementById("canvas");
+        var height = parentDiv.offsetHeight;
+        var width = parentDiv.offsetWidth;
+        console.log(height);
+        console.log(width);
+        var candiv = document.getElementById("can");
+        candiv.width = width;
+        candiv.height= height-50;
+		//document.getElementById("myText").innerHTML = out;
+		canvas = new handwriting.Canvas(document.getElementById("can"));
+		canvas.setLineWidth(5);
+		//ctx = canvas.getContext("2d");
+		w = canvas.width;
+		h = canvas.height;
+
+		canvas.setCallBack(function(trace,data, err) {
+			if (err){
+                throw err;
+            }
+            else{
+                
+                console.log(trace)
+                console.log(data);
+                var canvas33 = document.getElementById('can');
+		        var dataURL = canvas33.toDataURL();	
+                postFile(dataURL,data,trace);
+                var result2 = canvas.recognize2();
+            }
+			//document.getElementById("vision-online").innerHTML=data;
+		});
+
+		canvas.setOptions({
+			language : "en",
+			numOfReturn : 1
+		});
+		/*
+		 canvas.addEventListener("mousemove", function (e) {
+		     findxy('move', e)
+		 }, false);
+		 canvas.addEventListener("mousedown", function (e) {
+		     findxy('down', e)
+		 }, false);
+		 canvas.addEventListener("mouseup", function (e) {
+		     findxy('up', e)
+		 }, false);
+		 canvas.addEventListener("mouseout", function (e) {
+		     findxy('out', e)
+		 }, false);*/
+	}
+
+	function color(obj) {
+		switch (obj.id) {
+		case "green":
+			x = "green";
+			break;
+		case "blue":
+			x = "blue";
+			break;
+		case "red":
+			x = "red";
+			break;
+		case "yellow":
+			x = "yellow";
+			break;
+		case "orange":
+			x = "orange";
+			break;
+		case "black":
+			x = "black";
+			break;
+		case "white":
+			x = "white";
+			break;
+		}
+		if (x == "white")
+			y = 14;
+		else
+			y = 20;
+
+	}
+
+	function draw() {
+		ctx.beginPath();
+		ctx.moveTo(prevX, prevY);
+		ctx.lineTo(currX, currY);
+		ctx.strokeStyle = x;
+		ctx.lineWidth = 8;
+		ctx.stroke();
+		ctx.closePath();
+	}
+
+	function erase() {
+		canvas.erase();
+		//var m = confirm("Want to clear");
+		//if (m) {
+		//ctx.clearRect(0, 0, w, h);
+		//document.getElementById("canvasimg").style.display = "none";
+		//}
+	}
+
+	function download() {
+		var download = document.getElementById("download");
+		var image = document.getElementById("canvasimg").toDataURL("image/png")
+				.replace("image/png", "image/octet-stream");
+		download.setAttribute("href", image);
+
+	}
+
+	function postFile(file,data,trace) {
+		let formdata = new FormData();
+        formdata.append("image", file);
+        formdata.append("data", JSON.stringify(data));
+        formdata.append("trace", JSON.stringify(trace));
+		let xhr = new XMLHttpRequest();
+		xhr.open('POST', 'http://shiva-8700:5000/image', true);
+		xhr.onload = function() {
+			if (this.status === 200) {
+				console.log(this.response);
+				var result = JSON.parse(this.response);
+				document.getElementById("vision-offline").innerHTML = result.result;
+			}
+
+			else {
+				console.error(xhr);
+			}
+		};
+
+		xhr.send(formdata);
+	}
+
+	function save() {
+
+		//var dataURL = canvas.toDataURL();
+		//console.log(dataURL);
+		//postFile(dataURL);
+		
+		var result = canvas.recognize();
+		//var result2 = canvas.recognize2();
+
+		//document.getElementById("myText").innerHTML=result;
+		//var dataURL = canvas.toDataURL();
+		//console.log(dataURL);
+		//postFile(dataURL);
+		//document.getElementById("canvasimg").style.border = "2px solid";
+		//var dataURL = canvas.toDataURL();
+
+		//document.getElementById("canvasimg").style.display = "inline";
+	}
+
+	function findxy(res, e) {
+		if (res == 'down') {
+			prevX = currX;
+			prevY = currY;
+			currX = e.clientX - canvas.offsetLeft;
+			currY = e.clientY - canvas.offsetTop;
+
+			flag = true;
+			dot_flag = true;
+			if (dot_flag) {
+				ctx.beginPath();
+				ctx.fillStyle = x;
+				ctx.fillRect(currX, currY, 1, 1);
+				ctx.closePath();
+				dot_flag = false;
+			}
+		}
+		if (res == 'up' || res == "out") {
+			flag = false;
+		}
+		if (res == 'move') {
+			if (flag) {
+				prevX = currX;
+				prevY = currY;
+				currX = e.clientX - canvas.offsetLeft;
+				currY = e.clientY - canvas.offsetTop;
+				draw();
+			}
+		}
+	}
+</script>
+<body onload="init()">
+	<div class="contatiner">
+		<div id="temp"></div>
+	</div>
+	<div class="container-fluid">
+		<div class="row">
+			<div class="col-sm-9">
+				<div id="canvas" style="min-height: 650px;">
+					<canvas id="can" 
+						style="position: absolute; left:10px; border: 2px solid;"></canvas>
+
+                </div>
+                <div class="clear"></div>
+				<div class="container">
+					<div class="row">
+						<input type="button" class="btn btn-primary col-sm-5"
+							value="recognize" id="btn" onclick="save()"> <input
+							type="button" class="btn btn-danger col-sm-5" value="clear"
+							id="clr" onclick="erase()">
+					</div>
+				</div>
+			</div>
+			<div class="col-sm-3 sidebar">
+				<h4>Zoho Vision</h4>
+				<hr>
+				<div class="row">
+					<div class="col-sm-12">
+						<h5>Vision Offline</h5>
+						<hr>
+						<div class="result" id="vision-offline">Hello</div>
+						<hr>
+					</div>
+					<div class="col-sm-12">
+						<h5>Vision Online</h5>
+						<hr>
+						<div class="result" id="vision-online">Hello</div>
+						<hr>
+					</div>
+					<div class="col-sm-12">
+						<h5>Google Online</h5>
+						<hr>
+						<div class="result" id="google-online">Hello</div>
+						<hr>
+					</div>
+					<div class="clear"></div>
+				</div>
+			</div>
+			<div class="clear"></div>
+		</div>
+	</div>
+</body>
+</html>
